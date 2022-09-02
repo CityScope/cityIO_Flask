@@ -14,18 +14,21 @@ from flask_cors import CORS
 import sys
 import hashlib
 
+def load_base_json(table_names):
+    for table_name in table_names:
+        print('Loading {}'.format(table_name))
+        tables[table_name]=json.load(open('base/{}_base.json'.format(table_name)))
+
+def dict_to_hash(the_dict):
+    return hashlib.sha224(json.dumps(the_dict).encode()).hexdigest()
+
 app = Flask(__name__)
 CORS(app)
 
 table_names = [n for n in sys.argv[1:len(sys.argv)]]
 tables={}
 
-for table_name in table_names:
-    print('Loading {}'.format(table_name))
-    tables[table_name]=json.load(open('base/{}_base.json'.format(table_name)))
-
-def dict_to_hash(the_dict):
-    return hashlib.sha224(json.dumps(the_dict).encode()).hexdigest()
+load_base_json(table_names)
 
 @app.route('/api/table/<table_name>/<field>/',methods = [ 'POST', 'DELETE'])
 def post_field(table_name, field):
@@ -45,6 +48,11 @@ def post_field(table_name, field):
             return Response(status=200)
         else:
             return Response(status=200)
+
+@app.route('/api/tables/reload/',methods = ['POST'])
+def reload():
+    load_base_json(table_names)
+    return Response(status=200)
 
 @app.route('/api/tables/list/',methods = ['GET']) 
 def get_tables_list():
